@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AppContext } from "./context";
 import {
   emptyReports,
   getDefaultProjects,
   getDefaultUsers,
-  getDefaultVendors
+  getDefaultWorkDetails,
 } from "../data/erpSeed";
 
 const LS_KEY = "erp_app_state";
@@ -14,7 +14,7 @@ function loadPersisted() {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) {
       const data = JSON.parse(raw);
-      if (data?.projects && data?.users && data?.vendors && data?.reports) {
+      if (data?.projects && data?.users) {
         return data;
       }
     }
@@ -30,26 +30,28 @@ function getInitialState() {
     return {
       projects: saved.projects,
       users: saved.users,
-      vendors: saved.vendors,
+      workDetails: saved.workDetails ?? getDefaultWorkDetails(),
       reports: {
         ...emptyReports(),
         ...saved.reports,
-        labour: saved.reports.labour || [],
-        machinery: saved.reports.machinery || [],
-        materials: saved.reports.materials || [],
-        stock: saved.reports.stock || [],
-        details: saved.reports.details || [],
-        accounts: saved.reports.accounts || []
-      }
+      },
     };
   }
   return {
     projects: getDefaultProjects(),
     users: getDefaultUsers(),
-    vendors: getDefaultVendors(),
-    reports: emptyReports()
+    workDetails: getDefaultWorkDetails(),
+    reports: emptyReports(),
   };
 }
+
+export const useApp = () => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error("useApp must be used within AppProvider");
+  }
+  return context;
+};
 
 export const AppProvider = ({ children }) => {
   const initialRef = useRef(null);
@@ -58,55 +60,15 @@ export const AppProvider = ({ children }) => {
   }
   const [projects, setProjects] = useState(initialRef.current.projects);
   const [users, setUsers] = useState(initialRef.current.users);
-  const [vendors, setVendors] = useState(initialRef.current.vendors);
-  const [reports, setReports] = useState(initialRef.current.reports);
-
-  // Legacy arrays used by CrudTable pages — mirror machinery slice for backward compatibility
-  const machineryRows = reports.machinery;
-  const setMachineryRows = useCallback((updater) => {
-    setReports((prev) => {
-      const next =
-        typeof updater === "function"
-          ? updater(prev.machinery)
-          : updater;
-      return { ...prev, machinery: next };
-    });
-  }, []);
-
-  const labourRows = reports.labour;
-  const setLabourRows = useCallback((updater) => {
-    setReports((prev) => {
-      const next =
-        typeof updater === "function" ? updater(prev.labour) : updater;
-      return { ...prev, labour: next };
-    });
-  }, []);
-
-  const materialsRows = reports.materials;
-  const setMaterialsRows = useCallback((updater) => {
-    setReports((prev) => {
-      const next =
-        typeof updater === "function"
-          ? updater(prev.materials)
-          : updater;
-      return { ...prev, materials: next };
-    });
-  }, []);
+  const [workDetails, setWorkDetails] = useState(initialRef.current.workDetails);
+  const [reports] = useState(initialRef.current.reports);
 
   useEffect(() => {
     localStorage.setItem(
       LS_KEY,
-      JSON.stringify({ projects, users, vendors, reports })
+      JSON.stringify({ projects, users, workDetails, reports })
     );
-  }, [projects, users, vendors, reports]);
-
-  const updateReportSection = useCallback((section, updater) => {
-    setReports((prev) => ({
-      ...prev,
-      [section]:
-        typeof updater === "function" ? updater(prev[section]) : updater
-    }));
-  }, []);
+  }, [projects, users, workDetails, reports]);
 
   const value = useMemo(
     () => ({
@@ -114,34 +76,11 @@ export const AppProvider = ({ children }) => {
       setProjects,
       users,
       setUsers,
-      vendors,
-      setVendors,
-      reports,
-      setReports,
-      updateReportSection,
-      labour: labourRows,
-      setLabour: setLabourRows,
-      materials: materialsRows,
-      setMaterials: setMaterialsRows,
-      machinery: machineryRows,
-      setMachinery: setMachineryRows
+      workDetails,
+      setWorkDetails,
     }),
-    [
-      projects,
-      users,
-      vendors,
-      reports,
-      updateReportSection,
-      labourRows,
-      setLabourRows,
-      materialsRows,
-      setMaterialsRows,
-      machineryRows,
-      setMachineryRows
-    ]
+    [projects, users, workDetails]
   );
 
-  return (
-    <AppContext.Provider value={value}>{children}</AppContext.Provider>
-  );
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

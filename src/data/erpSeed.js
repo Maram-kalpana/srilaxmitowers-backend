@@ -11,9 +11,7 @@ export function getDefaultProjects() {
       location: "Hyderabad",
       startDate: "2026-01-15",
       managerId: seedManagerUserId,
-      budget: "₹5L",
-      status: "Active"
-    }
+    },
   ];
 }
 
@@ -22,43 +20,20 @@ export function getDefaultUsers() {
     {
       id: seedManagerUserId,
       name: "Site Manager",
-      email: "manager@erp.local",
-      phone: "",
-      role: "manager",
-      projectId: seedProjectId,
-      status: "Active",
-      username: "manager",
-      password: "manager123"
-    }
+      phone: "9000000000",
+      salary: "45000",
+    },
   ];
 }
 
-export function getDefaultVendors() {
+export function getDefaultWorkDetails() {
   return [
     {
-      id: "v-seed-labour",
-      type: "labour",
-      name: "ABC Labour Contractors",
-      contact: "9000000001",
-      notes: "",
-      projectId: seedProjectId
+      id: "wd-seed-1",
+      date: "2026-01-20",
+      name: "Foundation work",
+      status: "In Progress",
     },
-    {
-      id: "v-seed-mach",
-      type: "machinery",
-      name: "XYZ Equipment",
-      contact: "9000000002",
-      notes: "",
-      projectId: seedProjectId
-    },
-    {
-      id: "v-seed-mat",
-      type: "material",
-      name: "BuildMart Supplies",
-      contact: "9000000003",
-      notes: "",
-      projectId: seedProjectId
-    }
   ];
 }
 
@@ -69,6 +44,6 @@ export function emptyReports() {
     materials: [],
     stock: [],
     details: [],
-    accounts: []
+    accounts: [],
   };
 }
