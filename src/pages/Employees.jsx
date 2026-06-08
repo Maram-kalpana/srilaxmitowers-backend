@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Plus, Pencil, Trash2, X, CreditCard } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, X, CreditCard, ChevronDown } from "lucide-react";
 import AdminLayout from "../components/AdminLayout";
 import { useApp } from "../context/AppContext";
 import EmployeeIdCardView from "../components/EmployeeIdCardView";
@@ -37,12 +37,38 @@ function LabeledInput({ label, type = "text", value, onChange, placeholder }) {
 
 const MAX_IMAGE_SIZE_MB = 2;
 
+function LabeledSelect({ label, value, onChange, children }) {
+  return (
+    <div className="relative">
+      {label && (
+        <label className="absolute left-4 -top-2.5 bg-card px-1 text-xs text-muted-foreground z-10">
+          {label}
+        </label>
+      )}
+      <select
+        value={value}
+        onChange={onChange}
+        className="w-full h-11 rounded-2xl border border-border bg-background px-4 pr-10 text-foreground outline-none appearance-none focus:ring-2 focus:ring-primary/30"
+      >
+        {children}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+    </div>
+  );
+}
+
 const emptyForm = {
   name: "",
   employeeId: "",
   mobile: "",
+  email: "",
+  dob: "",
+  designation: "",
   aadhar: "",
   monthlySalary: "",
+  projectId: "",
+  vehicleId: "",
+  route: "",
   trainingDurationStart: "",
   trainingDurationEnd: "",
   passPhoto: "",
@@ -99,7 +125,7 @@ function FileUploadField({ label, value, onChange, accept = "image/*" }) {
 }
 
 export default function Employees() {
-  const { employees, setEmployees } = useApp();
+  const { employees, setEmployees, projects, vehicles } = useApp();
   const [search, setSearch] = useState("");
   const [openPanel, setOpenPanel] = useState(false);
   const [openCard, setOpenCard] = useState(false);
@@ -111,15 +137,23 @@ export default function Employees() {
 
   useEffect(() => setCurrentPage(1), [search]);
 
+  const getProjectName = (projectId) =>
+    projects.find((p) => p.id === projectId)?.name ?? "—";
+
+  const getVehicleName = (vehicleId) =>
+    vehicles.find((v) => v.id === vehicleId)?.vehicleName ?? "—";
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return employees.filter(
       (e) =>
         (e.name || "").toLowerCase().includes(q) ||
         (e.employeeId || "").toLowerCase().includes(q) ||
-        (e.mobile || "").includes(q)
+        (e.mobile || "").includes(q) ||
+        getProjectName(e.projectId).toLowerCase().includes(q) ||
+        (e.route || "").toLowerCase().includes(q)
     );
-  }, [employees, search]);
+  }, [employees, search, projects]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
   const paginated = useMemo(() => {
@@ -156,8 +190,14 @@ export default function Employees() {
       name: form.name.trim(),
       employeeId: empIdUpper,
       mobile: form.mobile.trim(),
+      email: form.email.trim(),
+      dob: form.dob || "",
+      designation: form.designation.trim(),
       aadhar: form.aadhar.trim().replace(/\s/g, ""),
       monthlySalary: form.monthlySalary.toString().trim(),
+      projectId: form.projectId || "",
+      vehicleId: form.vehicleId || "",
+      route: form.route.trim(),
       trainingDurationStart: form.trainingDurationStart || "",
       trainingDurationEnd: form.trainingDurationEnd || "",
       passPhoto: form.passPhoto || "",
@@ -183,8 +223,14 @@ export default function Employees() {
       name: emp.name || "",
       employeeId: emp.employeeId || "",
       mobile: emp.mobile || "",
+      email: emp.email || "",
+      dob: emp.dob || "",
+      designation: emp.designation || "",
       aadhar: emp.aadhar || "",
       monthlySalary: emp.monthlySalary ?? "",
+      projectId: emp.projectId || "",
+      vehicleId: emp.vehicleId || "",
+      route: emp.route || "",
       trainingDurationStart: emp.trainingDurationStart || "",
       trainingDurationEnd: emp.trainingDurationEnd || "",
       passPhoto: emp.passPhoto || "",
@@ -209,7 +255,11 @@ export default function Employees() {
       name: form.name.trim() || "Employee Name",
       employeeId: form.employeeId.trim().toUpperCase() || "EMP000",
       mobile: form.mobile.trim() || "—",
-      aadhar: form.aadhar.trim() || "",
+      email: form.email.trim() || "—",
+      dob: form.dob || "",
+      designation: form.designation.trim() || "Designation Here",
+      trainingDurationStart: form.trainingDurationStart || "",
+      trainingDurationEnd: form.trainingDurationEnd || "",
       passPhoto: form.passPhoto || "",
     }),
     [form, editingId]
@@ -260,10 +310,10 @@ export default function Employees() {
                   {[
                     "Name",
                     "Employee ID",
+                    "Project",
+                    "Vehicle",
+                    "Route",
                     "Mobile",
-                    "Aadhar",
-                    "Salary",
-                    "Training Period",
                     "Documents",
                     "Actions",
                   ].map((h, i) => (
@@ -286,18 +336,16 @@ export default function Employees() {
                     <td className="py-3 px-4 border-b border-r border-border font-medium text-primary">
                       {emp.employeeId}
                     </td>
-                    <td className="py-3 px-4 border-b border-r border-border">{emp.mobile}</td>
                     <td className="py-3 px-4 border-b border-r border-border">
-                      {emp.aadhar ? `•••• ${String(emp.aadhar).slice(-4)}` : "—"}
+                      {getProjectName(emp.projectId)}
                     </td>
                     <td className="py-3 px-4 border-b border-r border-border">
-                      ₹{Number(emp.monthlySalary).toLocaleString("en-IN")}
+                      {getVehicleName(emp.vehicleId)}
                     </td>
                     <td className="py-3 px-4 border-b border-r border-border text-xs">
-                      {emp.trainingDurationStart && emp.trainingDurationEnd
-                        ? `${emp.trainingDurationStart} — ${emp.trainingDurationEnd}`
-                        : emp.trainingDurationStart || emp.trainingDurationEnd || "—"}
+                      {emp.route || "—"}
                     </td>
+                    <td className="py-3 px-4 border-b border-r border-border">{emp.mobile}</td>
                     <td className="py-3 px-4 border-b border-r border-border text-xs">
                       {emp.passPhoto || emp.aadharCardImage ? (
                         <span className="text-green-700 font-medium">Uploaded</span>
@@ -392,6 +440,55 @@ export default function Employees() {
             placeholder="10-digit mobile"
           />
           <LabeledInput
+            label="Email"
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+            placeholder="email@example.com"
+          />
+          <LabeledInput
+            label="Date of Birth"
+            type="date"
+            value={form.dob}
+            onChange={(e) => setForm((p) => ({ ...p, dob: e.target.value }))}
+          />
+          <LabeledInput
+            label="Designation"
+            value={form.designation}
+            onChange={(e) => setForm((p) => ({ ...p, designation: e.target.value }))}
+            placeholder="e.g. Site Engineer"
+          />
+          <LabeledSelect
+            label="Project Name"
+            value={form.projectId}
+            onChange={(e) => setForm((p) => ({ ...p, projectId: e.target.value }))}
+          >
+            <option value="">Select project</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </LabeledSelect>
+          <LabeledSelect
+            label="Vehicle"
+            value={form.vehicleId}
+            onChange={(e) => setForm((p) => ({ ...p, vehicleId: e.target.value }))}
+          >
+            <option value="">Select vehicle</option>
+            {vehicles.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.vehicleName}
+              </option>
+            ))}
+          </LabeledSelect>
+          <LabeledInput
+            label="Route"
+            value={form.route}
+            onChange={(e) => setForm((p) => ({ ...p, route: e.target.value }))}
+            placeholder="e.g. Hyderabad — Site A"
+          />
+          <LabeledInput
             label="Aadhar Number"
             value={form.aadhar}
             onChange={(e) => setForm((p) => ({ ...p, aadhar: e.target.value }))}
@@ -427,10 +524,12 @@ export default function Employees() {
             onChange={(dataUrl) => setForm((p) => ({ ...p, aadharCardImage: dataUrl }))}
           />
           <div>
-            <p className="text-sm font-medium text-foreground mb-2">Training duration period</p>
+            <p className="text-sm font-medium text-foreground mb-2">
+              ID card validity (Join &amp; Expire on card)
+            </p>
             <div className="grid grid-cols-1 gap-3">
               <LabeledInput
-                label="Start date"
+                label="Join date"
                 type="date"
                 value={form.trainingDurationStart}
                 onChange={(e) =>
@@ -438,7 +537,7 @@ export default function Employees() {
                 }
               />
               <LabeledInput
-                label="End date"
+                label="Expire date"
                 type="date"
                 value={form.trainingDurationEnd}
                 onChange={(e) =>

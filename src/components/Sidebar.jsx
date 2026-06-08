@@ -15,6 +15,8 @@ import {
   CalendarCheck,
   Receipt,
   Wallet,
+  Cog as CogIcon,
+  Truck,
 } from "lucide-react";
 import AppLogo from "./AppLogo";
 
@@ -106,6 +108,8 @@ export default function Sidebar({ isOpen, onClose }) {
       icon: Briefcase,
       items: [
         { label: "Projects", icon: FolderKanban, path: "/dashboard/projects" },
+        { label: "Machine", icon: CogIcon, path: "/dashboard/machine" },
+        { label: "Vehicle", icon: Truck, path: "/dashboard/vehicle" },
         { label: "Employees", icon: UserPlus, path: "/dashboard/employees" },
         { label: "Attendance", icon: CalendarCheck, path: "/dashboard/attendance" },
         { label: "Salary Slips", icon: Receipt, path: "/dashboard/salary-slips" },

@@ -6,6 +6,8 @@ import { useAuth } from "../context/AuthContext";
 const PAGE_ROUTES = [
   { name: "Dashboard", path: "/dashboard" },
   { name: "Projects", path: "/dashboard/projects" },
+  { name: "Machine", path: "/dashboard/machine" },
+  { name: "Vehicle", path: "/dashboard/vehicle" },
   { name: "Employees", path: "/dashboard/employees" },
   { name: "Attendance", path: "/dashboard/attendance" },
   { name: "Salary Slips", path: "/dashboard/salary-slips" },

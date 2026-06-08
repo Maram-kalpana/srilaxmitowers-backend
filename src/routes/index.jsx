@@ -4,6 +4,8 @@ import ProtectedRoute from "./ProtectedRoute";
 import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
 import Projects from "../pages/Projects";
+import Machine from "../pages/Machine";
+import Vehicle from "../pages/Vehicle";
 import Employees from "../pages/Employees";
 import Attendance from "../pages/Attendance";
 import SalarySlips from "../pages/SalarySlips";
@@ -40,6 +42,8 @@ export const router = createHashRouter([
     children: [
       { index: true, element: <Dashboard /> },
       { path: "projects", element: <Projects /> },
+      { path: "machine", element: <Machine /> },
+      { path: "vehicle", element: <Vehicle /> },
       { path: "employees", element: <Employees /> },
       { path: "attendance", element: <Attendance /> },
       { path: "salary-slips", element: <SalarySlips /> },

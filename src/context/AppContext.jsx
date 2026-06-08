@@ -6,6 +6,7 @@ import {
   getDefaultWorkDetails,
   getDefaultEmployees,
   getDefaultAttendance,
+  getDefaultVehicles,
 } from "../data/erpSeed";
 
 const LS_KEY = "erp_app_state";
@@ -34,6 +35,8 @@ function getInitialState() {
       employees: saved.employees ?? getDefaultEmployees(),
       attendance: saved.attendance ?? getDefaultAttendance(),
       expenses: saved.expenses ?? [],
+      machines: saved.machines ?? [],
+      vehicles: saved.vehicles ?? getDefaultVehicles(),
       reports: {
         ...emptyReports(),
         ...saved.reports,
@@ -46,6 +49,8 @@ function getInitialState() {
     employees: getDefaultEmployees(),
     attendance: getDefaultAttendance(),
     expenses: [],
+    machines: [],
+    vehicles: getDefaultVehicles(),
     reports: emptyReports(),
   };
 }
@@ -68,6 +73,8 @@ export const AppProvider = ({ children }) => {
   const [employees, setEmployees] = useState(initialRef.current.employees);
   const [attendance, setAttendance] = useState(initialRef.current.attendance);
   const [expenses, setExpenses] = useState(initialRef.current.expenses);
+  const [machines, setMachines] = useState(initialRef.current.machines);
+  const [vehicles, setVehicles] = useState(initialRef.current.vehicles);
   const [reports] = useState(initialRef.current.reports);
 
   useEffect(() => {
@@ -79,10 +86,12 @@ export const AppProvider = ({ children }) => {
         employees,
         attendance,
         expenses,
+        machines,
+        vehicles,
         reports,
       })
     );
-  }, [projects, workDetails, employees, attendance, expenses, reports]);
+  }, [projects, workDetails, employees, attendance, expenses, machines, vehicles, reports]);
 
   const value = useMemo(
     () => ({
@@ -96,8 +105,12 @@ export const AppProvider = ({ children }) => {
       setAttendance,
       expenses,
       setExpenses,
+      machines,
+      setMachines,
+      vehicles,
+      setVehicles,
     }),
-    [projects, workDetails, employees, attendance, expenses]
+    [projects, workDetails, employees, attendance, expenses, machines, vehicles]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

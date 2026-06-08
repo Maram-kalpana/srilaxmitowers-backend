@@ -1,10 +1,56 @@
 import { useRef } from "react";
 import html2canvas from "html2canvas";
 import { Download } from "lucide-react";
-import AppLogo from "./AppLogo";
-import { maskAadhar } from "../utils/hrUtils";
+import logo from "../assets/logo.png";
+import { COMPANY_NAME, COMPANY_TAGLINE } from "../constants/company";
 
-export default function EmployeeIdCardView({ employee, showDownload = true, compact = false }) {
+function formatCardDate(value) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function CardRow({ label, value }) {
+  return (
+    <div className="flex items-baseline gap-1 text-[11px] leading-snug">
+      <span className="text-[#2d2d2d] font-semibold shrink-0">{label}</span>
+      <span className="text-[#2d2d2d]">:</span>
+      <span className="text-[#444] flex-1 text-right break-all">{value || "—"}</span>
+    </div>
+  );
+}
+
+function WaveDivider({ flip = false }) {
+  return (
+    <svg
+      viewBox="0 0 280 28"
+      className={`w-full block ${flip ? "rotate-180" : ""}`}
+      preserveAspectRatio="none"
+      aria-hidden
+    >
+      <path
+        d="M0,14 C35,0 70,28 105,14 C140,0 175,28 210,14 C245,0 262,14 280,14 L280,28 L0,28 Z"
+        fill="#dc2626"
+      />
+      <path
+        d="M0,18 C40,6 80,26 120,16 C160,6 200,26 240,16 C260,12 275,16 280,16 L280,28 L0,28 Z"
+        fill="#b91c1c"
+        opacity="0.85"
+      />
+    </svg>
+  );
+}
+
+export default function EmployeeIdCardView({
+  employee,
+  showDownload = true,
+  compact = false,
+}) {
   const cardRef = useRef(null);
 
   if (!employee) return null;
@@ -26,72 +72,79 @@ export default function EmployeeIdCardView({ employee, showDownload = true, comp
     }
   };
 
+  const joinDate = employee.joinDate || employee.trainingDurationStart;
+  const expireDate = employee.idExpiryDate || employee.trainingDurationEnd;
+
   return (
     <div className={compact ? "w-full" : "flex flex-col items-center gap-4"}>
       <div
         ref={cardRef}
-        className="w-full max-w-[340px] mx-auto rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-white text-slate-900"
+        className="w-full max-w-[280px] mx-auto rounded-[20px] overflow-hidden shadow-2xl bg-white"
         style={{ fontFamily: "Inter, system-ui, sans-serif" }}
       >
-        <div className="bg-gradient-to-r from-blue-700 to-blue-900 px-5 py-4 text-white">
-          <div className="flex items-center gap-3">
-            <AppLogo size="card" variant="dark" />
-            <div>
-              <p className="text-[10px] uppercase tracking-widest opacity-80">
-                Employee Identity Card
-              </p>
-              <p className="text-sm font-bold leading-tight">Sruthika Constructions</p>
-            </div>
+        {/* Header */}
+        <div className="bg-[#1c1c1c] px-4 pt-5 pb-2 text-center">
+          <div className="flex justify-center mb-2">
+            <img
+              src={logo}
+              alt={COMPANY_NAME}
+              className="h-10 w-auto max-w-[200px] object-contain"
+            />
           </div>
-        </div>
-
-        <div className="p-5 flex gap-4">
-          <div className="w-24 h-28 rounded-xl bg-slate-100 border-2 border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
-            {employee.passPhoto ? (
-              <img
-                src={employee.passPhoto}
-                alt={employee.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-3xl font-bold text-blue-600">
-                {employee.name?.charAt(0)?.toUpperCase() || "?"}
-              </span>
-            )}
-          </div>
-          <div className="flex-1 min-w-0 space-y-2 text-sm">
-            <div>
-              <p className="text-[10px] text-slate-500 uppercase">Name</p>
-              <p className="font-bold text-base truncate">{employee.name}</p>
-            </div>
-            <div>
-              <p className="text-[10px] text-slate-500 uppercase">Employee ID</p>
-              <p className="font-semibold text-blue-700">{employee.employeeId}</p>
-            </div>
-            <div>
-              <p className="text-[10px] text-slate-500 uppercase">Mobile</p>
-              <p className="font-medium">{employee.mobile}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="px-5 pb-4 text-xs border-t border-slate-100 pt-3 mx-5 mb-4">
-          <p className="text-slate-500 uppercase text-[10px]">Aadhar</p>
-          <p className="font-medium">{maskAadhar(employee.aadhar)}</p>
-        </div>
-
-        <div className="bg-slate-50 px-5 py-2 text-center">
-          <p className="text-[9px] text-slate-500 tracking-wide">
-            Valid company employee · Present card at site entry
+          <h2 className="text-white text-[15px] font-bold uppercase tracking-wide leading-tight">
+            {COMPANY_NAME}
+          </h2>
+          <p className="text-[#dc2626] text-[10px] font-bold uppercase tracking-[0.2em] mt-1">
+            {COMPANY_TAGLINE}
           </p>
         </div>
+
+        <WaveDivider />
+
+        {/* Body */}
+        <div className="bg-white px-5 pt-6 pb-4 text-center">
+          <div className="flex justify-center mb-4">
+            <div className="w-[88px] h-[88px] rounded-full border-[3px] border-[#dc2626] overflow-hidden bg-slate-100 flex items-center justify-center">
+              {employee.passPhoto ? (
+                <img
+                  src={employee.passPhoto}
+                  alt={employee.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-3xl font-bold text-[#dc2626]">
+                  {employee.name?.charAt(0)?.toUpperCase() || "?"}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <h3 className="text-[#1c1c1c] text-lg font-bold leading-tight">
+            {employee.name || "Your Name"}
+          </h3>
+          <p className="text-[#dc2626] text-xs font-semibold mt-1 mb-5">
+            {employee.designation || "Designation Here"}
+          </p>
+
+          <div className="space-y-2 text-left px-1">
+            <CardRow label="ID No" value={employee.employeeId} />
+            <CardRow label="DOB" value={formatCardDate(employee.dob)} />
+            <CardRow label="Phone" value={employee.mobile} />
+            <CardRow label="Email" value={employee.email} />
+            <CardRow label="Join" value={formatCardDate(joinDate)} />
+            <CardRow label="Expire" value={formatCardDate(expireDate)} />
+          </div>
+        </div>
+
+        <WaveDivider flip />
+        <div className="h-3 bg-[#1c1c1c]" />
       </div>
 
       {showDownload && (
         <button
           type="button"
           onClick={handleDownload}
-          className="w-full max-w-[340px] h-11 rounded-xl bg-primary text-white text-sm font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition shadow-md shadow-primary/25"
+          className="w-full max-w-[280px] h-11 rounded-xl bg-primary text-white text-sm font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition shadow-md shadow-primary/25"
         >
           <Download className="w-4 h-4" />
           Download ID Card

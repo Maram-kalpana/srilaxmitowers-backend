@@ -25,8 +25,26 @@ export function getDefaultEmployees() {
       mobile: "9876543210",
       aadhar: "123456789012",
       monthlySalary: "25000",
-      trainingDurationStart: "",
-      trainingDurationEnd: "",
+      designation: "Site Manager",
+      email: "ravi@sruthika.com",
+      dob: "1990-05-15",
+      trainingDurationStart: "2026-01-01",
+      trainingDurationEnd: "2027-01-01",
+      projectId: "p-seed-1",
+      vehicleId: "veh-seed-1",
+      route: "Hyderabad — Site A",
+    },
+  ];
+}
+
+export function getDefaultVehicles() {
+  return [
+    {
+      id: "veh-seed-1",
+      vehicleName: "Tata Ace MH12AB1234",
+      insuranceDate: "2026-06-01",
+      roadTaxExpiryDate: "2026-12-31",
+      totalPermitExpiryDate: "2026-09-30",
     },
   ];
 }
