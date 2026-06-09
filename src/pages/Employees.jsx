@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Plus, Pencil, Trash2, X, CreditCard, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, X, CreditCard, ChevronDown, Eye } from "lucide-react";
 import AdminLayout from "../components/AdminLayout";
+import ListFilters from "../components/ListFilters";
 import { useApp } from "../context/AppContext";
 import EmployeeIdCardView from "../components/EmployeeIdCardView";
+import { matchesDate, matchesSearch } from "../utils/filterUtils";
 
 function SlidePanel({ open, onClose, children }) {
   if (!open) return null;
@@ -127,15 +129,18 @@ function FileUploadField({ label, value, onChange, accept = "image/*" }) {
 export default function Employees() {
   const { employees, setEmployees, projects, vehicles } = useApp();
   const [search, setSearch] = useState("");
+  const [filterDate, setFilterDate] = useState("");
   const [openPanel, setOpenPanel] = useState(false);
   const [openCard, setOpenCard] = useState(false);
+  const [openDocs, setOpenDocs] = useState(false);
+  const [docsEmployee, setDocsEmployee] = useState(null);
   const [cardEmployee, setCardEmployee] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [form, setForm] = useState(emptyForm);
   const itemsPerPage = 5;
 
-  useEffect(() => setCurrentPage(1), [search]);
+  useEffect(() => setCurrentPage(1), [search, filterDate]);
 
   const getProjectName = (projectId) =>
     projects.find((p) => p.id === projectId)?.name ?? "—";
@@ -144,16 +149,26 @@ export default function Employees() {
     vehicles.find((v) => v.id === vehicleId)?.vehicleName ?? "—";
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
     return employees.filter(
       (e) =>
-        (e.name || "").toLowerCase().includes(q) ||
-        (e.employeeId || "").toLowerCase().includes(q) ||
-        (e.mobile || "").includes(q) ||
-        getProjectName(e.projectId).toLowerCase().includes(q) ||
-        (e.route || "").toLowerCase().includes(q)
+        matchesSearch(
+          search,
+          e.name,
+          e.employeeId,
+          e.mobile,
+          e.email,
+          getProjectName(e.projectId),
+          getVehicleName(e.vehicleId),
+          e.route
+        ) &&
+        matchesDate(
+          filterDate,
+          e.dob,
+          e.trainingDurationStart,
+          e.trainingDurationEnd
+        )
     );
-  }, [employees, search, projects]);
+  }, [employees, search, filterDate, projects, vehicles]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
   const paginated = useMemo(() => {
@@ -271,6 +286,12 @@ export default function Employees() {
     setOpenCard(true);
   };
 
+  const showDocuments = (emp) => {
+    const latest = employees.find((e) => e.id === emp.id) ?? emp;
+    setDocsEmployee(latest);
+    setOpenDocs(true);
+  };
+
   return (
     <>
       <AdminLayout>
@@ -293,15 +314,14 @@ export default function Employees() {
             </button>
           </div>
 
-          <div className="relative w-full max-w-[430px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or employee ID..."
-              className="w-full h-11 pl-10 pr-4 rounded-xl bg-card border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
+          <ListFilters
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search by name, ID, project, route..."
+            date={filterDate}
+            onDateChange={setFilterDate}
+            dateLabel="DOB / join / expire date"
+          />
 
           <div className="bg-card rounded-xl border border-border overflow-x-auto">
             <table className="w-full text-sm border-collapse min-w-[900px]">
@@ -348,7 +368,14 @@ export default function Employees() {
                     <td className="py-3 px-4 border-b border-r border-border">{emp.mobile}</td>
                     <td className="py-3 px-4 border-b border-r border-border text-xs">
                       {emp.passPhoto || emp.aadharCardImage ? (
-                        <span className="text-green-700 font-medium">Uploaded</span>
+                        <button
+                          type="button"
+                          onClick={() => showDocuments(emp)}
+                          className="inline-flex items-center gap-1 text-primary font-medium hover:underline"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          View
+                        </button>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
@@ -555,6 +582,50 @@ export default function Employees() {
           </button>
         </div>
       </SlidePanel>
+
+      {openDocs && docsEmployee && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-card rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto border border-border shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-lg font-bold">Uploaded Documents</h3>
+                <p className="text-xs text-muted-foreground">
+                  {docsEmployee.name} · {docsEmployee.employeeId}
+                </p>
+              </div>
+              <button type="button" onClick={() => setOpenDocs(false)}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-5">
+              <div>
+                <p className="text-sm font-semibold mb-2">Passport Size Photo</p>
+                {docsEmployee.passPhoto ? (
+                  <img
+                    src={docsEmployee.passPhoto}
+                    alt="Passport photo"
+                    className="w-full max-h-64 object-contain rounded-xl border border-border bg-secondary/20"
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">Not uploaded</p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-semibold mb-2">Aadhar Card</p>
+                {docsEmployee.aadharCardImage ? (
+                  <img
+                    src={docsEmployee.aadharCardImage}
+                    alt="Aadhar card"
+                    className="w-full max-h-64 object-contain rounded-xl border border-border bg-secondary/20"
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">Not uploaded</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {openCard && cardEmployeeDisplay && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">

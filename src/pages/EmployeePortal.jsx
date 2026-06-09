@@ -34,7 +34,7 @@ export default function EmployeePortal() {
           <AppLogo size="md" variant="light" />
           <div>
             <p className="text-xs text-slate-500 uppercase tracking-wide">Employee Portal</p>
-            <p className="font-bold text-slate-900 text-sm">Sruthika Constructions</p>
+            <p className="font-bold text-slate-900 text-sm">Srilaxmi</p>
           </div>
         </div>
       </header>

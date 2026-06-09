@@ -26,13 +26,23 @@ function loadPersisted() {
   return null;
 }
 
+function backfillProjectManagers(projects, employees) {
+  return (projects ?? []).map((project) => {
+    if (project.managerName) return project;
+    if (!project.managerId) return project;
+    const manager = (employees ?? []).find((e) => e.id === project.managerId);
+    return manager ? { ...project, managerName: manager.name } : project;
+  });
+}
+
 function getInitialState() {
   const saved = loadPersisted();
   if (saved) {
+    const employees = saved.employees ?? getDefaultEmployees();
     return {
-      projects: saved.projects,
+      projects: backfillProjectManagers(saved.projects, employees),
       workDetails: saved.workDetails ?? getDefaultWorkDetails(),
-      employees: saved.employees ?? getDefaultEmployees(),
+      employees,
       attendance: saved.attendance ?? getDefaultAttendance(),
       expenses: saved.expenses ?? [],
       machines: saved.machines ?? [],

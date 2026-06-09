@@ -1,13 +1,24 @@
 import { useMemo, useState } from "react";
 import AdminLayout from "../components/AdminLayout";
+import ListFilters from "../components/ListFilters";
 import { useApp } from "../context/AppContext";
 import { getAttendanceStatus, isAbsent, isPresent, maskAadhar } from "../utils/hrUtils";
+import { matchesSearch } from "../utils/filterUtils";
 
 export default function Attendance() {
   const { employees, attendance, setAttendance } = useApp();
   const now = new Date();
   const [selectedDate, setSelectedDate] = useState(
     `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
+  );
+  const [search, setSearch] = useState("");
+
+  const filteredEmployees = useMemo(
+    () =>
+      employees.filter((emp) =>
+        matchesSearch(search, emp.name, emp.employeeId, emp.mobile)
+      ),
+    [employees, search]
   );
 
   const setAttendanceStatus = (employeeId, status) => {
@@ -60,17 +71,14 @@ export default function Attendance() {
           checkboxes. Only one status can be selected per employee per day.
         </p>
 
-        <div>
-          <label className="text-sm font-medium text-foreground block mb-2">
-            Date
-          </label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="h-11 px-4 rounded-xl border border-border bg-background w-full max-w-xs"
-          />
-        </div>
+        <ListFilters
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search by employee name or ID..."
+          date={selectedDate}
+          onDateChange={setSelectedDate}
+          dateLabel="Attendance date"
+        />
 
         <div className="grid grid-cols-2 gap-3 max-w-md">
           <div className="rounded-xl border border-green-200 bg-green-50 dark:bg-green-950/30 p-4">
@@ -119,7 +127,7 @@ export default function Attendance() {
               </tr>
             </thead>
             <tbody>
-              {employees.map((emp) => {
+              {filteredEmployees.map((emp) => {
                 const presentChecked = isPresent(
                   attendance,
                   emp.employeeId,
@@ -189,13 +197,15 @@ export default function Attendance() {
                   </tr>
                 );
               })}
-              {employees.length === 0 && (
+              {filteredEmployees.length === 0 && (
                 <tr>
                   <td
                     colSpan={7}
                     className="py-10 text-center text-muted-foreground"
                   >
-                    Add employees first to take attendance.
+                    {employees.length === 0
+                      ? "Add employees first to take attendance."
+                      : "No employees match your search."}
                   </td>
                 </tr>
               )}

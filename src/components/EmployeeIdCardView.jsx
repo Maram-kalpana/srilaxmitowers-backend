@@ -15,15 +15,14 @@ function formatCardDate(value) {
   });
 }
 
-function CardRow({ label, value }) {
-  return (
-    <div className="flex items-baseline gap-1 text-[11px] leading-snug">
-      <span className="text-[#2d2d2d] font-semibold shrink-0">{label}</span>
-      <span className="text-[#2d2d2d]">:</span>
-      <span className="text-[#444] flex-1 text-right break-all">{value || "—"}</span>
-    </div>
-  );
-}
+const CARD_ROWS = [
+  { key: "employeeId", label: "ID No" },
+  { key: "dob", label: "DOB", format: formatCardDate },
+  { key: "mobile", label: "Phone" },
+  { key: "email", label: "Email" },
+  { key: "join", label: "Join", format: formatCardDate },
+  { key: "expire", label: "Expire", format: formatCardDate },
+];
 
 function WaveDivider({ flip = false }) {
   return (
@@ -75,6 +74,15 @@ export default function EmployeeIdCardView({
   const joinDate = employee.joinDate || employee.trainingDurationStart;
   const expireDate = employee.idExpiryDate || employee.trainingDurationEnd;
 
+  const rowValues = {
+    employeeId: employee.employeeId,
+    dob: employee.dob,
+    mobile: employee.mobile,
+    email: employee.email,
+    join: joinDate,
+    expire: expireDate,
+  };
+
   return (
     <div className={compact ? "w-full" : "flex flex-col items-center gap-4"}>
       <div
@@ -82,34 +90,36 @@ export default function EmployeeIdCardView({
         className="w-full max-w-[280px] mx-auto rounded-[20px] overflow-hidden shadow-2xl bg-white"
         style={{ fontFamily: "Inter, system-ui, sans-serif" }}
       >
-        {/* Header */}
         <div className="bg-[#1c1c1c] px-4 pt-5 pb-2 text-center">
-          <div className="flex justify-center mb-2">
+          <div className="flex justify-center mb-3 h-12 items-center">
             <img
               src={logo}
               alt={COMPANY_NAME}
-              className="h-10 w-auto max-w-[200px] object-contain"
+              className="h-12 w-auto max-w-[210px] object-contain"
+              style={{
+                mixBlendMode: "screen",
+                filter: "brightness(1.15) contrast(1.05)",
+              }}
             />
           </div>
-          <h2 className="text-white text-[15px] font-bold uppercase tracking-wide leading-tight">
+          <h2 className="text-white text-[14px] font-bold uppercase tracking-[0.12em] leading-tight">
             {COMPANY_NAME}
           </h2>
-          <p className="text-[#dc2626] text-[10px] font-bold uppercase tracking-[0.2em] mt-1">
+          <p className="text-[#dc2626] text-[9px] font-bold uppercase tracking-[0.22em] mt-1.5">
             {COMPANY_TAGLINE}
           </p>
         </div>
 
         <WaveDivider />
 
-        {/* Body */}
-        <div className="bg-white px-5 pt-6 pb-4 text-center">
+        <div className="bg-white px-4 pt-6 pb-5 text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-[88px] h-[88px] rounded-full border-[3px] border-[#dc2626] overflow-hidden bg-slate-100 flex items-center justify-center">
+            <div className="w-[92px] h-[92px] rounded-full border-[3px] border-[#dc2626] overflow-hidden bg-slate-100 flex items-center justify-center">
               {employee.passPhoto ? (
                 <img
                   src={employee.passPhoto}
                   alt={employee.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-center"
                 />
               ) : (
                 <span className="text-3xl font-bold text-[#dc2626]">
@@ -119,20 +129,28 @@ export default function EmployeeIdCardView({
             </div>
           </div>
 
-          <h3 className="text-[#1c1c1c] text-lg font-bold leading-tight">
+          <h3 className="text-[#1c1c1c] text-[17px] font-bold leading-tight">
             {employee.name || "Your Name"}
           </h3>
-          <p className="text-[#dc2626] text-xs font-semibold mt-1 mb-5">
+          <p className="text-[#dc2626] text-[11px] font-semibold mt-1 mb-5">
             {employee.designation || "Designation Here"}
           </p>
 
-          <div className="space-y-2 text-left px-1">
-            <CardRow label="ID No" value={employee.employeeId} />
-            <CardRow label="DOB" value={formatCardDate(employee.dob)} />
-            <CardRow label="Phone" value={employee.mobile} />
-            <CardRow label="Email" value={employee.email} />
-            <CardRow label="Join" value={formatCardDate(joinDate)} />
-            <CardRow label="Expire" value={formatCardDate(expireDate)} />
+          <div className="mx-auto w-full max-w-[200px] space-y-2">
+            {CARD_ROWS.map(({ key, label, format }) => {
+              const raw = rowValues[key];
+              const display = format ? format(raw) : raw || "—";
+              return (
+                <p
+                  key={key}
+                  className="text-[11px] leading-tight text-[#333] text-center"
+                >
+                  <span className="font-semibold text-[#1c1c1c]">{label}</span>
+                  <span className="mx-1">:</span>
+                  <span>{display}</span>
+                </p>
+              );
+            })}
           </div>
         </div>
 

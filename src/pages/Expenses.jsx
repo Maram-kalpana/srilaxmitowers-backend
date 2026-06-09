@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Plus, Pencil, Trash2, X, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, X, ChevronDown } from "lucide-react";
 import AdminLayout from "../components/AdminLayout";
+import ListFilters from "../components/ListFilters";
 import { useApp } from "../context/AppContext";
+import { matchesDate, matchesSearch } from "../utils/filterUtils";
 
 const ADVANCE_TYPES = [
   { value: "petrol", label: "Petrol" },
@@ -75,13 +77,14 @@ function advanceTypeLabel(value) {
 export default function Expenses() {
   const { expenses, setExpenses, employees } = useApp();
   const [search, setSearch] = useState("");
+  const [filterDate, setFilterDate] = useState("");
   const [openPanel, setOpenPanel] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [form, setForm] = useState(emptyForm);
   const itemsPerPage = 5;
 
-  useEffect(() => setCurrentPage(1), [search]);
+  useEffect(() => setCurrentPage(1), [search, filterDate]);
 
   const getEmployeeName = (employeeId) => {
     const emp = employees.find((e) => e.id === employeeId);
@@ -89,17 +92,19 @@ export default function Expenses() {
   };
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
     return expenses.filter((row) => {
-      const name = getEmployeeName(row.employeeId).toLowerCase();
+      const name = getEmployeeName(row.employeeId);
       return (
-        name.includes(q) ||
-        (row.date || "").includes(q) ||
-        advanceTypeLabel(row.advanceType).toLowerCase().includes(q) ||
-        String(row.amount || "").includes(q)
+        matchesSearch(
+          search,
+          name,
+          advanceTypeLabel(row.advanceType),
+          row.amount,
+          row.note
+        ) && matchesDate(filterDate, row.date)
       );
     });
-  }, [expenses, search, employees]);
+  }, [expenses, search, filterDate, employees]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
   const paginated = useMemo(() => {
@@ -179,15 +184,14 @@ export default function Expenses() {
             </button>
           </div>
 
-          <div className="relative w-full max-w-[430px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by employee, type, or date..."
-              className="w-full h-11 pl-10 pr-4 rounded-xl bg-card border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
+          <ListFilters
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search by employee, advance type, amount..."
+            date={filterDate}
+            onDateChange={setFilterDate}
+            dateLabel="Advance date"
+          />
 
           <div className="bg-card rounded-xl border border-border overflow-x-auto">
             <table className="w-full text-sm border-collapse min-w-[720px]">

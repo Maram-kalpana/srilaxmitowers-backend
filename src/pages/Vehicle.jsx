@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Plus, Pencil, Trash2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, X } from "lucide-react";
 import AdminLayout from "../components/AdminLayout";
+import ListFilters from "../components/ListFilters";
 import { useApp } from "../context/AppContext";
+import { matchesDate, matchesSearch } from "../utils/filterUtils";
 
 function SlidePanel({ open, onClose, children }) {
   if (!open) return null;
@@ -44,24 +46,27 @@ const emptyForm = {
 export default function Vehicle() {
   const { vehicles, setVehicles } = useApp();
   const [search, setSearch] = useState("");
+  const [filterDate, setFilterDate] = useState("");
   const [openPanel, setOpenPanel] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [form, setForm] = useState(emptyForm);
   const itemsPerPage = 5;
 
-  useEffect(() => setCurrentPage(1), [search]);
+  useEffect(() => setCurrentPage(1), [search, filterDate]);
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
     return vehicles.filter(
       (v) =>
-        (v.vehicleName || "").toLowerCase().includes(q) ||
-        (v.insuranceDate || "").includes(q) ||
-        (v.roadTaxExpiryDate || "").includes(q) ||
-        (v.totalPermitExpiryDate || "").includes(q)
+        matchesSearch(search, v.vehicleName) &&
+        matchesDate(
+          filterDate,
+          v.insuranceDate,
+          v.roadTaxExpiryDate,
+          v.totalPermitExpiryDate
+        )
     );
-  }, [vehicles, search]);
+  }, [vehicles, search, filterDate]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
   const paginated = useMemo(() => {
@@ -137,15 +142,14 @@ export default function Vehicle() {
             </button>
           </div>
 
-          <div className="relative w-full max-w-[430px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search vehicles..."
-              className="w-full h-11 pl-10 pr-4 rounded-xl bg-card border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
+          <ListFilters
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search by vehicle name..."
+            date={filterDate}
+            onDateChange={setFilterDate}
+            dateLabel="Insurance / tax / permit date"
+          />
 
           <div className="bg-card rounded-xl border border-border overflow-x-auto">
             <table className="w-full text-sm border-collapse min-w-[760px]">

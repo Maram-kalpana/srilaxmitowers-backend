@@ -12,6 +12,7 @@ export function getDefaultProjects() {
       location: "Hyderabad",
       startDate: "2026-01-15",
       managerId: seedEmployeeId,
+      managerName: "Ravi Kumar",
     },
   ];
 }

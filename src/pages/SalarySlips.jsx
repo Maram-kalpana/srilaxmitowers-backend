@@ -2,7 +2,9 @@ import { useMemo, useRef, useState } from "react";
 import { Download, X } from "lucide-react";
 import html2canvas from "html2canvas";
 import AdminLayout from "../components/AdminLayout";
+import ListFilters from "../components/ListFilters";
 import { useApp } from "../context/AppContext";
+import { matchesSearch } from "../utils/filterUtils";
 import {
   calculateSalary,
   MONTH_NAMES,
@@ -17,7 +19,7 @@ function SalarySlipDocument({ employee, breakdown, periodLabel }) {
     >
       <div className="border-b border-slate-200 pb-4 mb-4">
         <p className="text-xs uppercase tracking-widest text-slate-500">Salary Slip</p>
-        <h2 className="text-xl font-bold">Sruthika Constructions</h2>
+        <h2 className="text-xl font-bold">Srilaxmi</h2>
         <p className="text-sm text-slate-600">{periodLabel}</p>
       </div>
 
@@ -107,8 +109,17 @@ export default function SalarySlips() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
+  const [search, setSearch] = useState("");
   const [slipModalOpen, setSlipModalOpen] = useState(false);
   const slipRef = useRef(null);
+
+  const filteredEmployees = useMemo(
+    () =>
+      employees.filter((emp) =>
+        matchesSearch(search, emp.name, emp.employeeId, emp.mobile)
+      ),
+    [employees, search]
+  );
 
   const periodLabel = `${MONTH_NAMES[month - 1]} ${year}`;
 
@@ -165,7 +176,7 @@ export default function SalarySlips() {
           in a popup with present and absent details.
         </p>
 
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-4 items-end">
           <div>
             <label className="text-sm font-medium block mb-2">Month</label>
             <select
@@ -196,12 +207,19 @@ export default function SalarySlips() {
           </div>
         </div>
 
+        <ListFilters
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search employee by name or ID..."
+          showDate={false}
+        />
+
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <div className="px-4 py-3 border-b border-border bg-secondary/40">
             <h3 className="font-semibold text-sm">Employees — click to view payslip</h3>
           </div>
           <ul className="divide-y divide-border">
-            {employees.map((emp) => {
+            {filteredEmployees.map((emp) => {
               const summary = summarizeAttendance(
                 attendance,
                 emp.employeeId,
@@ -231,9 +249,11 @@ export default function SalarySlips() {
                 </li>
               );
             })}
-            {employees.length === 0 && (
+            {filteredEmployees.length === 0 && (
               <li className="py-10 text-center text-muted-foreground text-sm">
-                No employees added yet.
+                {employees.length === 0
+                  ? "No employees added yet."
+                  : "No employees match your search."}
               </li>
             )}
           </ul>

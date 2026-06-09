@@ -73,7 +73,7 @@ export default function Register() {
 
               <div>
                 <h1 className="text-lg font-bold text-slate-900">
-                  Sruthika Constructions
+                  Srilaxmi
                 </h1>
                 <p className="text-xs text-slate-500">Build Smarter</p>
               </div>

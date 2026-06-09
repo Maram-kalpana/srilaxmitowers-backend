@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Plus, Pencil, Trash2, X, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, X, ChevronDown } from "lucide-react";
 import AdminLayout from "../components/AdminLayout";
+import ListFilters from "../components/ListFilters";
 import { useApp } from "../context/AppContext";
+import { matchesDate, matchesSearch } from "../utils/filterUtils";
 
 const RETURN_REPAIR_OPTIONS = [
   { value: "return", label: "Return" },
@@ -74,30 +76,28 @@ export default function Machine() {
   const { machines, setMachines, projects } = useApp();
   const [entryType, setEntryType] = useState("in");
   const [search, setSearch] = useState("");
+  const [filterDate, setFilterDate] = useState("");
   const [openPanel, setOpenPanel] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [form, setForm] = useState(emptyForm);
   const itemsPerPage = 5;
 
-  useEffect(() => setCurrentPage(1), [search, entryType]);
+  useEffect(() => setCurrentPage(1), [search, filterDate, entryType]);
 
   const getProjectName = (projectId) =>
     projects.find((p) => p.id === projectId)?.name ?? "—";
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
     return machines.filter((row) => {
-      const projectName = getProjectName(row.projectId).toLowerCase();
+      const projectName = getProjectName(row.projectId);
       return (
         row.entryType === entryType &&
-        ((row.machineName || "").toLowerCase().includes(q) ||
-          (row.serialNo || "").toLowerCase().includes(q) ||
-          (row.model || "").toLowerCase().includes(q) ||
-          projectName.includes(q))
+        matchesSearch(search, row.machineName, row.serialNo, row.model, projectName) &&
+        matchesDate(filterDate, row.date)
       );
     });
-  }, [machines, search, entryType, projects]);
+  }, [machines, search, filterDate, entryType, projects]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
   const paginated = useMemo(() => {
@@ -211,15 +211,14 @@ export default function Machine() {
             ))}
           </div>
 
-          <div className="relative w-full max-w-[430px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search machines..."
-              className="w-full h-11 pl-10 pr-4 rounded-xl bg-card border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
+          <ListFilters
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search by machine name, serial, model, project..."
+            date={filterDate}
+            onDateChange={setFilterDate}
+            dateLabel="Record date"
+          />
 
           <div className="bg-card rounded-xl border border-border overflow-x-auto">
             <table className="w-full text-sm border-collapse min-w-[900px]">

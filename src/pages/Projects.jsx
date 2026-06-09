@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, Plus, Pencil, Trash2, X, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, X, ChevronDown } from "lucide-react";
 import AdminLayout from "../components/AdminLayout";
+import ListFilters from "../components/ListFilters";
 import { useApp } from "../context/AppContext";
+import { matchesDate, matchesSearch } from "../utils/filterUtils";
 
 function SlidePanel({ open, onClose, children }) {
   if (!open) return null;
@@ -54,46 +56,99 @@ function LabeledSelect({ label, value, onChange, children }) {
   );
 }
 
+const EMPTY_FORM = {
+  name: "",
+  companyName: "",
+  managerId: "",
+  location: "",
+  startDate: "",
+};
+
+function ProjectFormFields({ form, setForm, employees, isEdit, onSubmit }) {
+  return (
+    <div className="px-6 space-y-5">
+      <LabeledInput
+        label="Project Name"
+        value={form.name}
+        onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+        placeholder="Enter project name"
+      />
+      <LabeledInput
+        label="Project Company Name"
+        value={form.companyName}
+        onChange={(e) => setForm((p) => ({ ...p, companyName: e.target.value }))}
+        placeholder="Client or company name"
+      />
+      <LabeledSelect
+        label="Assign Manager"
+        value={form.managerId}
+        onChange={(e) => setForm((p) => ({ ...p, managerId: e.target.value }))}
+      >
+        <option value="">Select Manager</option>
+        {employees.map((m) => (
+          <option key={m.id} value={m.id}>
+            {m.name} ({m.employeeId})
+          </option>
+        ))}
+      </LabeledSelect>
+      <LabeledInput
+        label="Location"
+        value={form.location}
+        onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
+        placeholder="Enter location"
+      />
+      <LabeledInput
+        label="Start Date"
+        type="date"
+        value={form.startDate}
+        onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))}
+      />
+      <button
+        type="button"
+        onClick={onSubmit}
+        className="w-full h-12 mt-2 rounded-2xl bg-primary text-white font-semibold shadow-md shadow-primary/25 hover:opacity-90 transition"
+      >
+        {isEdit ? "Update Project" : "Add Project"}
+      </button>
+    </div>
+  );
+}
+
 const Projects = () => {
   const { projects, setProjects, employees } = useApp();
   const [search, setSearch] = useState("");
+  const [filterDate, setFilterDate] = useState("");
   const [openAddPanel, setOpenAddPanel] = useState(false);
   const [openEditPanel, setOpenEditPanel] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
-
-  const emptyForm = {
-    name: "",
-    companyName: "",
-    managerId: "",
-    location: "",
-    startDate: "",
-  };
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(EMPTY_FORM);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search]);
+  }, [search, filterDate]);
 
-  const getManagerName = (managerId) => {
+  const getManagerName = (project) => {
+    if (project.managerName) return project.managerName;
+    const manager = employees.find((e) => e.id === project.managerId);
+    return manager?.name ?? "—";
+  };
+
+  const resolveManagerName = (managerId) => {
     const manager = employees.find((e) => e.id === managerId);
-    return manager?.name ?? "-";
+    return manager?.name ?? "";
   };
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
     return projects.filter((p) => {
-      const managerName = getManagerName(p.managerId).toLowerCase();
+      const managerName = getManagerName(p);
       return (
-        (p.name || "").toLowerCase().includes(q) ||
-        (p.companyName || "").toLowerCase().includes(q) ||
-        (p.location || "").toLowerCase().includes(q) ||
-        managerName.includes(q) ||
-        (p.startDate || "").includes(q)
+        matchesSearch(search, p.name, p.companyName, p.location, managerName) &&
+        matchesDate(filterDate, p.startDate)
       );
     });
-  }, [projects, search, employees]);
+  }, [projects, search, filterDate, employees]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
   const paginatedData = useMemo(() => {
@@ -101,7 +156,7 @@ const Projects = () => {
     return filtered.slice(start, start + itemsPerPage);
   }, [filtered, currentPage]);
 
-  const resetForm = () => setForm(emptyForm);
+  const resetForm = () => setForm(EMPTY_FORM);
 
   const handleAddProject = () => {
     if (!form.name.trim()) return alert("Please enter project name");
@@ -117,6 +172,7 @@ const Projects = () => {
         name: form.name.trim(),
         companyName: form.companyName.trim(),
         managerId: form.managerId,
+        managerName: resolveManagerName(form.managerId),
         location: form.location.trim(),
         startDate: form.startDate,
       },
@@ -152,6 +208,7 @@ const Projects = () => {
               name: form.name.trim(),
               companyName: form.companyName.trim(),
               managerId: form.managerId,
+              managerName: resolveManagerName(form.managerId),
               location: form.location.trim(),
               startDate: form.startDate,
             }
@@ -167,60 +224,6 @@ const Projects = () => {
     if (!window.confirm("Delete this project?")) return;
     setProjects((prev) => prev.filter((p) => p.id !== id));
   };
-
-  const ManagerOptions = () => (
-    <>
-      <option value="">Select Manager</option>
-      {employees.map((m) => (
-        <option key={m.id} value={m.id}>
-          {m.name} ({m.employeeId})
-        </option>
-      ))}
-    </>
-  );
-
-  const FormFields = ({ isEdit = false }) => (
-    <div className="px-6 space-y-5">
-      <LabeledInput
-        label="Project Name"
-        value={form.name}
-        onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-        placeholder="Enter project name"
-      />
-      <LabeledInput
-        label="Project Company Name"
-        value={form.companyName}
-        onChange={(e) => setForm((p) => ({ ...p, companyName: e.target.value }))}
-        placeholder="Client or company name"
-      />
-      <LabeledSelect
-        label="Assign Manager"
-        value={form.managerId}
-        onChange={(e) => setForm((p) => ({ ...p, managerId: e.target.value }))}
-      >
-        <ManagerOptions />
-      </LabeledSelect>
-      <LabeledInput
-        label="Location"
-        value={form.location}
-        onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
-        placeholder="Enter location"
-      />
-      <LabeledInput
-        label="Start Date"
-        type="date"
-        value={form.startDate}
-        onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))}
-      />
-      <button
-        type="button"
-        onClick={isEdit ? handleUpdateProject : handleAddProject}
-        className="w-full h-12 mt-2 rounded-2xl bg-primary text-white font-semibold shadow-md shadow-primary/25 hover:opacity-90 transition"
-      >
-        {isEdit ? "Update Project" : "Add Project"}
-      </button>
-    </div>
-  );
 
   return (
     <>
@@ -243,16 +246,14 @@ const Projects = () => {
             </button>
           </div>
 
-          <div className="relative flex-shrink-0 w-full sm:w-[250px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              type="text"
-              placeholder="Search..."
-              className="w-full h-10 pl-10 pr-3 rounded-lg bg-card border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
-            />
-          </div>
+          <ListFilters
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search by project, company, location, manager..."
+            date={filterDate}
+            onDateChange={setFilterDate}
+            dateLabel="Start date"
+          />
 
           <div className="bg-card rounded-xl border border-border overflow-hidden overflow-x-auto">
             <table className="w-full text-sm border-collapse min-w-[600px]">
@@ -282,7 +283,7 @@ const Projects = () => {
                       {project.companyName ?? "—"}
                     </td>
                     <td className="py-4 px-5 border-b border-r border-border">
-                      {getManagerName(project.managerId)}
+                      {getManagerName(project)}
                     </td>
                     <td className="py-4 px-5 border-b border-r border-border">
                       {project.startDate ?? "-"}
@@ -355,7 +356,13 @@ const Projects = () => {
               <X className="w-5 h-5 text-muted-foreground" />
             </button>
           </div>
-          <FormFields isEdit={false} />
+          <ProjectFormFields
+            form={form}
+            setForm={setForm}
+            employees={employees}
+            isEdit={false}
+            onSubmit={handleAddProject}
+          />
         </div>
       </SlidePanel>
 
@@ -371,7 +378,13 @@ const Projects = () => {
               <X className="w-5 h-5 text-muted-foreground" />
             </button>
           </div>
-          <FormFields isEdit />
+          <ProjectFormFields
+            form={form}
+            setForm={setForm}
+            employees={employees}
+            isEdit
+            onSubmit={handleUpdateProject}
+          />
         </div>
       </SlidePanel>
     </>
