@@ -6,6 +6,8 @@ import {
   useState,
   useContext,
 } from "react";
+import { USE_API } from "../api/client.js";
+import * as authApi from "../api/authApi.js";
 
 export const AuthContext = createContext(null);
 
@@ -45,29 +47,60 @@ export function AuthProvider({ children }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    try {
-      const rawUser = localStorage.getItem(STORAGE_KEY);
-      if (rawUser) {
-        setUser(JSON.parse(rawUser));
+    async function init() {
+      try {
+        if (USE_API && localStorage.getItem("erp_access_token")) {
+          const me = await authApi.meApi();
+          if (me) {
+            setUser({ id: me.id, name: me.name, role: me.role });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(me));
+            setReady(true);
+            return;
+          }
+        }
+        const rawUser = localStorage.getItem(STORAGE_KEY);
+        if (rawUser) setUser(JSON.parse(rawUser));
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem("erp_access_token");
+        setUser(null);
+      } finally {
+        setReady(true);
       }
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
-      setUser(null);
-    } finally {
-      setReady(true);
     }
+    init();
   }, []);
 
   const register = useCallback(async (data) => {
+    if (USE_API) {
+      try {
+        const result = await authApi.registerApi({
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          password: data.password,
+          role: "admin",
+        });
+        const sessionUser = {
+          id: result.user.id,
+          name: result.user.name,
+          role: result.user.role,
+        };
+        setUser(sessionUser);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionUser));
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
     const users = loadAuthUsers();
     const username = (data.email || data.name || "")
       .toLowerCase()
       .replace(/\s+/g, "")
       .slice(0, 32);
 
-    if (users.some((u) => u.username === username)) {
-      return false;
-    }
+    if (users.some((u) => u.username === username)) return false;
 
     const newUser = {
       id: `user-${Date.now()}`,
@@ -87,6 +120,25 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (data) => {
+    if (USE_API) {
+      try {
+        const result = await authApi.loginApi({
+          login: data.login || data.username,
+          password: data.password,
+        });
+        const sessionUser = {
+          id: result.user.id,
+          name: result.user.name,
+          role: result.user.role,
+        };
+        setUser(sessionUser);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionUser));
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
     const users = loadAuthUsers();
     const loginId = (data.login || data.username || "").trim().toLowerCase();
     const match = users.find(
@@ -95,9 +147,7 @@ export function AuthProvider({ children }) {
         u.email?.toLowerCase() === loginId
     );
 
-    if (!match || match.password !== data.password) {
-      return false;
-    }
+    if (!match || match.password !== data.password) return false;
 
     const sessionUser = { id: match.id, name: match.name, role: match.role };
     setUser(sessionUser);
@@ -105,9 +155,17 @@ export function AuthProvider({ children }) {
     return true;
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    if (USE_API) {
+      try {
+        await authApi.logoutApi();
+      } catch {
+        /* ignore */
+      }
+    }
     setUser(null);
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem("erp_access_token");
   }, []);
 
   const value = useMemo(
