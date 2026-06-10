@@ -4,6 +4,7 @@ const SIZE_CLASSES = {
   sm: "h-9 w-[110px]",
   md: "h-10 w-[140px]",
   lg: "h-12 w-[180px]",
+  xl: "h-16 w-[240px]",
   sidebar: "h-11 w-[160px]",
   card: "h-12 w-[150px]",
 };

@@ -3,48 +3,56 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import pool from "../config/db.js";
+import mysql from "mysql2/promise";
+import { query } from "../config/db.js";
 
 dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const dbHost = process.env.DB_HOST || "localhost";
+const dbPort = Number(process.env.DB_PORT) || 3306;
+const dbUser = process.env.DB_USER || "root";
+const dbPassword = process.env.DB_PASSWORD || "";
+const dbName = process.env.DB_NAME || "srilaxmi";
 
 async function init() {
   const sqlPath = path.join(__dirname, "..", "..", "database.sql");
   const sql = fs.readFileSync(sqlPath, "utf8");
-  const statements = sql
-    .split(";")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0 && !s.startsWith("--"));
 
-  const conn = await pool.getConnection();
+  const connection = await mysql.createConnection({
+    host: dbHost,
+    port: dbPort,
+    user: dbUser,
+    password: dbPassword,
+    multipleStatements: true,
+  });
+
   try {
-    for (const stmt of statements) {
-      await conn.query(stmt);
-    }
-
-    const [rows] = await conn.query(
-      `SELECT id FROM users WHERE username = 'admin' AND deleted_at IS NULL`
-    );
-    if (rows.length === 0) {
-      const hash = await bcrypt.hash("admin123", 12);
-      await conn.query(
-        `INSERT INTO users (username, email, name, password_hash, role) VALUES ('admin', 'admin@srilaxmi.com', 'Admin', ?, 'admin')`,
-        [hash]
-      );
-      console.log("Seeded admin user — username: admin, password: admin123");
-    } else {
-      console.log("Admin user already exists");
-    }
-
-    console.log("Database initialized successfully");
+    await connection.query(sql);
   } finally {
-    conn.release();
-    await pool.end();
+    await connection.end();
   }
+
+  const existingAdmin = await query(
+    "SELECT id FROM users WHERE username = 'admin' AND deleted_at IS NULL"
+  );
+
+  if (existingAdmin.length === 0) {
+    const hash = await bcrypt.hash("admin123", 12);
+    await query(
+      "INSERT INTO users (username, email, name, password_hash, role) VALUES ('admin', 'admin@srilaxmi.com', 'Admin', ?, 'admin')",
+      [hash]
+    );
+    console.log("Seeded admin user — username: admin, password: admin123");
+  } else {
+    console.log("Admin user already exists");
+  }
+
+  console.log("Database initialized successfully");
 }
 
-init().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+init()
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });

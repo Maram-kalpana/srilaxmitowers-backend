@@ -68,7 +68,6 @@ const emptyForm = {
   designation: "",
   aadhar: "",
   monthlySalary: "",
-  projectId: "",
   vehicleId: "",
   route: "",
   trainingDurationStart: "",
@@ -127,7 +126,7 @@ function FileUploadField({ label, value, onChange, accept = "image/*" }) {
 }
 
 export default function Employees() {
-  const { employees, setEmployees, projects, vehicles } = useApp();
+  const { employees, setEmployees, vehicles } = useApp();
   const [search, setSearch] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [openPanel, setOpenPanel] = useState(false);
@@ -142,9 +141,6 @@ export default function Employees() {
 
   useEffect(() => setCurrentPage(1), [search, filterDate]);
 
-  const getProjectName = (projectId) =>
-    projects.find((p) => p.id === projectId)?.name ?? "—";
-
   const getVehicleName = (vehicleId) =>
     vehicles.find((v) => v.id === vehicleId)?.vehicleName ?? "—";
 
@@ -157,7 +153,6 @@ export default function Employees() {
           e.employeeId,
           e.mobile,
           e.email,
-          getProjectName(e.projectId),
           getVehicleName(e.vehicleId),
           e.route
         ) &&
@@ -168,7 +163,7 @@ export default function Employees() {
           e.trainingDurationEnd
         )
     );
-  }, [employees, search, filterDate, projects, vehicles]);
+  }, [employees, search, filterDate, vehicles]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
   const paginated = useMemo(() => {
@@ -210,7 +205,6 @@ export default function Employees() {
       designation: form.designation.trim(),
       aadhar: form.aadhar.trim().replace(/\s/g, ""),
       monthlySalary: form.monthlySalary.toString().trim(),
-      projectId: form.projectId || "",
       vehicleId: form.vehicleId || "",
       route: form.route.trim(),
       trainingDurationStart: form.trainingDurationStart || "",
@@ -243,7 +237,6 @@ export default function Employees() {
       designation: emp.designation || "",
       aadhar: emp.aadhar || "",
       monthlySalary: emp.monthlySalary ?? "",
-      projectId: emp.projectId || "",
       vehicleId: emp.vehicleId || "",
       route: emp.route || "",
       trainingDurationStart: emp.trainingDurationStart || "",
@@ -317,7 +310,7 @@ export default function Employees() {
           <ListFilters
             search={search}
             onSearchChange={setSearch}
-            searchPlaceholder="Search by name, ID, project, route..."
+            searchPlaceholder="Search by name, ID, route..."
             date={filterDate}
             onDateChange={setFilterDate}
             dateLabel="DOB / join / expire date"
@@ -327,10 +320,9 @@ export default function Employees() {
             <table className="w-full text-sm border-collapse min-w-[900px]">
               <thead>
                 <tr className="bg-secondary/50">
-                  {[
+                    {[
                     "Name",
                     "Employee ID",
-                    "Project",
                     "Vehicle",
                     "Route",
                     "Mobile",
@@ -355,9 +347,6 @@ export default function Employees() {
                     <td className="py-3 px-4 border-b border-r border-border">{emp.name}</td>
                     <td className="py-3 px-4 border-b border-r border-border font-medium text-primary">
                       {emp.employeeId}
-                    </td>
-                    <td className="py-3 px-4 border-b border-r border-border">
-                      {getProjectName(emp.projectId)}
                     </td>
                     <td className="py-3 px-4 border-b border-r border-border">
                       {getVehicleName(emp.vehicleId)}
@@ -485,18 +474,6 @@ export default function Employees() {
             onChange={(e) => setForm((p) => ({ ...p, designation: e.target.value }))}
             placeholder="e.g. Site Engineer"
           />
-          <LabeledSelect
-            label="Project Name"
-            value={form.projectId}
-            onChange={(e) => setForm((p) => ({ ...p, projectId: e.target.value }))}
-          >
-            <option value="">Select project</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </LabeledSelect>
           <LabeledSelect
             label="Vehicle"
             value={form.vehicleId}

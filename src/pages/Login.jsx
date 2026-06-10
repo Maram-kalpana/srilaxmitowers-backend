@@ -41,11 +41,7 @@ export default function Login() {
           <div className="max-w-md">
             {/* Logo + Title */}
             <div className="flex items-center gap-4">
-              <AppLogo size="lg" variant="dark" />
-
-              <h1 className="text-2xl font-bold text-white">
-                Towers
-              </h1>
+              <AppLogo size="xl" variant="dark" />
             </div>
 
             {/* Description */}
@@ -85,11 +81,7 @@ export default function Login() {
 
             {/* Logo + Title */}
             <div className="flex items-center gap-3">
-              <AppLogo size="md" variant="light" />
-
-              <h1 className="text-base font-semibold text-slate-900">
-                Towers
-              </h1>
+              <AppLogo size="xl" variant="light" />
             </div>
 
             {/* Heading */}

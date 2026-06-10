@@ -22,6 +22,7 @@ export async function syncCollection(resource, prev, next) {
   const nextMap = new Map(next.map((i) => [i.id, i]));
 
   let result = [...next];
+  const errors = [];
 
   for (const item of prev) {
     if (!nextMap.has(item.id) && !isTempId(item.id)) {
@@ -29,6 +30,7 @@ export async function syncCollection(resource, prev, next) {
         await erpApi.deleteItem(apiKey, item.id);
       } catch (e) {
         console.error(`Delete ${resource} failed`, e);
+        errors.push(`Delete ${resource} ${item.id}: ${e?.message || e}`);
       }
     }
   }
@@ -42,6 +44,7 @@ export async function syncCollection(resource, prev, next) {
         }
       } catch (e) {
         console.error(`Create ${resource} failed`, e);
+        errors.push(`Create ${resource} ${item.id}: ${e?.message || e}`);
       }
     } else if (JSON.stringify(prevMap.get(item.id)) !== JSON.stringify(item) && !isTempId(item.id)) {
       try {
@@ -51,6 +54,7 @@ export async function syncCollection(resource, prev, next) {
         }
       } catch (e) {
         console.error(`Update ${resource} failed`, e);
+        errors.push(`Update ${resource} ${item.id}: ${e?.message || e}`);
       }
     } else if (isTempId(item.id)) {
       try {
@@ -60,8 +64,13 @@ export async function syncCollection(resource, prev, next) {
         }
       } catch (e) {
         console.error(`Create ${resource} failed`, e);
+        errors.push(`Create ${resource} ${item.id}: ${e?.message || e}`);
       }
     }
+  }
+
+  if (errors.length > 0) {
+    throw new Error(errors.join("; "));
   }
 
   return result;

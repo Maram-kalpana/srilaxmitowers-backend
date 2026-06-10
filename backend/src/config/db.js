@@ -16,14 +16,18 @@ const pool = mysql.createPool({
   namedPlaceholders: true,
 });
 
-export async function query(sql, params = {}) {
+export async function query(sql, params = []) {
   const [rows] = await pool.execute(sql, params);
   return rows;
 }
 
-export async function queryOne(sql, params = {}) {
+export async function queryOne(sql, params = []) {
   const rows = await query(sql, params);
   return rows[0] ?? null;
+}
+
+export async function testConnection() {
+  await pool.query("SELECT 1");
 }
 
 export default pool;

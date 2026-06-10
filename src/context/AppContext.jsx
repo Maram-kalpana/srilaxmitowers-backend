@@ -83,6 +83,11 @@ export const AppProvider = ({ children }) => {
   const [reports] = useState(initialRef.current.reports);
   const [apiReady, setApiReady] = useState(!USE_API);
 
+  const showSyncError = useCallback((resource, e) => {
+    console.error(`Sync ${resource} failed`, e);
+    alert(`API sync failed for ${resource}: ${e?.message || e}`);
+  }, []);
+
   const projectsRef = useRef(projects);
   const workDetailsRef = useRef(workDetails);
   const employeesRef = useRef(employees);
@@ -161,9 +166,9 @@ export const AppProvider = ({ children }) => {
         projectsRef.current = synced;
       }
     } catch (e) {
-      console.error("Sync projects failed", e);
+      showSyncError("projects", e);
     }
-  }, []);
+  }, [showSyncError]);
 
   const setEmployees = useCallback(async (updater) => {
     const prev = employeesRef.current;
@@ -178,9 +183,9 @@ export const AppProvider = ({ children }) => {
         employeesRef.current = synced;
       }
     } catch (e) {
-      console.error("Sync employees failed", e);
+      showSyncError("employees", e);
     }
-  }, []);
+  }, [showSyncError]);
 
   const setVehicles = useCallback(async (updater) => {
     const prev = vehiclesRef.current;
@@ -195,9 +200,9 @@ export const AppProvider = ({ children }) => {
         vehiclesRef.current = synced;
       }
     } catch (e) {
-      console.error("Sync vehicles failed", e);
+      showSyncError("vehicles", e);
     }
-  }, []);
+  }, [showSyncError]);
 
   const setMachines = useCallback(async (updater) => {
     const prev = machinesRef.current;
@@ -212,9 +217,9 @@ export const AppProvider = ({ children }) => {
         machinesRef.current = synced;
       }
     } catch (e) {
-      console.error("Sync machines failed", e);
+      showSyncError("machines", e);
     }
-  }, []);
+  }, [showSyncError]);
 
   const setExpenses = useCallback(async (updater) => {
     const prev = expensesRef.current;
@@ -229,9 +234,9 @@ export const AppProvider = ({ children }) => {
         expensesRef.current = synced;
       }
     } catch (e) {
-      console.error("Sync expenses failed", e);
+      showSyncError("expenses", e);
     }
-  }, []);
+  }, [showSyncError]);
 
   const setWorkDetails = useCallback(async (updater) => {
     const prev = workDetailsRef.current;
@@ -246,9 +251,9 @@ export const AppProvider = ({ children }) => {
         workDetailsRef.current = synced;
       }
     } catch (e) {
-      console.error("Sync workDetails failed", e);
+      showSyncError("workDetails", e);
     }
-  }, []);
+  }, [showSyncError]);
 
   const setAttendance = useCallback(async (updater) => {
     const prev = attendanceRef.current;
@@ -259,9 +264,9 @@ export const AppProvider = ({ children }) => {
     try {
       await syncAttendance(prev, next);
     } catch (e) {
-      console.error("Attendance sync failed", e);
+      showSyncError("attendance", e);
     }
-  }, []);
+  }, [showSyncError]);
 
   const value = useMemo(
     () => ({
